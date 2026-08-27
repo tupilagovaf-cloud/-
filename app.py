@@ -1,20 +1,29 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # <-- Добавляем поддержку CORS
 import requests
 import os
 
 app = Flask(__name__)
+CORS(app)  # <-- Разрешаем запросы с любых источников
 
 # Берем токен бота из переменных окружения Render
 BOT_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-# ID чата, куда будут приходить заявки (твой ID)
-CHAT_ID = "5493329438"
+CHAT_ID = "5493329438"  # Твой ID в Telegram
 
 @app.route('/')
 def home():
     return "Bot is running!"
 
-@app.route('/send', methods=['POST'])
+@app.route('/send', methods=['POST', 'OPTIONS'])  # <-- Добавляем OPTIONS
 def send_order():
+    if request.method == 'OPTIONS':
+        # Это ответ на preflight-запрос от браузера
+        response = jsonify({"status": "ok"})
+        response.headers.add("Access-Control-Allow-Origin", "*")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        response.headers.add("Access-Control-Allow-Methods", "POST")
+        return response
+
     try:
         data = request.get_json()
         name = data.get('name', 'Не указано')
@@ -41,6 +50,5 @@ def send_order():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
-    # Render требует, чтобы приложение слушало порт, указанный в переменной PORT
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
