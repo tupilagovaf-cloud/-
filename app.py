@@ -1,0 +1,46 @@
+from flask import Flask, request, jsonify
+import requests
+import os
+
+app = Flask(__name__)
+
+# Берем токен бота из переменных окружения Render
+BOT_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+# ID чата, куда будут приходить заявки (твой ID)
+CHAT_ID = "5493329438"
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+@app.route('/send', methods=['POST'])
+def send_order():
+    try:
+        data = request.get_json()
+        name = data.get('name', 'Не указано')
+        phone = data.get('phone', 'Не указан')
+        address = data.get('address', 'Не указан')
+        timestamp = data.get('timestamp', '')
+
+        message = f"📨 <b>НОВАЯ ЗАЯВКА</b>\n\n👤 <b>Имя:</b> {name}\n📞 <b>Телефон:</b> {phone}\n🏠 <b>Адрес:</b> {address}\n🕐 <b>Время:</b> {timestamp}"
+
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+        payload = {
+            'chat_id': CHAT_ID,
+            'text': message,
+            'parse_mode': 'HTML'
+        }
+        response = requests.post(url, json=payload, timeout=10)
+
+        if response.status_code == 200:
+            return jsonify({"status": "ok"}), 200
+        else:
+            return jsonify({"status": "error", "message": "Telegram API error"}), 500
+
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+if __name__ == '__main__':
+    # Render требует, чтобы приложение слушало порт, указанный в переменной PORT
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
