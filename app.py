@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-BOT_TOKEN = os.environ.get('TELEGRAM_TOKEN')
+BOT_TOKEN = "8738544740:AAG1GNXULHe1XnCLFklRXw1ty2W8wYFQ8kg"
 CHAT_ID = "5493329438"
 
 @app.route('/')
@@ -23,15 +23,23 @@ def send_order():
         return response
 
     try:
-        data = request.get_json()
-        print("Получены данные:", data)  # Лог на Render
+        # ПОДРОБНЫЙ ЛОГ ВСЕГО, ЧТО ПРИШЛО
+        print("=== НОВЫЙ ЗАПРОС ===")
+        print("Headers:", dict(request.headers))
+        print("Data:", request.get_data(as_text=True))
+        print("JSON:", request.get_json())
 
-        name = data.get('name', 'Не указано')
-        phone = data.get('phone', 'Не указан')
-        address = data.get('address', 'Не указан')
-        timestamp = data.get('timestamp', '')
+        data = request.get_json()
+        print("📥 Получены данные:", data)
+
+        name = data.get('name', 'Не указано') if data else 'Не указано'
+        phone = data.get('phone', 'Не указан') if data else 'Не указан'
+        address = data.get('address', 'Не указан') if data else 'Не указан'
+        timestamp = data.get('timestamp', '') if data else ''
 
         message = f"📨 <b>НОВАЯ ЗАЯВКА</b>\n\n👤 <b>Имя:</b> {name}\n📞 <b>Телефон:</b> {phone}\n🏠 <b>Адрес:</b> {address}\n🕐 <b>Время:</b> {timestamp}"
+
+        print("📤 Отправляем в Telegram:", message)
 
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
         payload = {
@@ -44,10 +52,10 @@ def send_order():
         if response.status_code == 200:
             return jsonify({"status": "ok"}), 200
         else:
-            return jsonify({"status": "error", "message": "Telegram API error"}), 500
+            return jsonify({"status": "error", "message": "Telegram API error: " + response.text}), 500
 
     except Exception as e:
-        print("Ошибка:", str(e))
+        print("❌ Ошибка:", str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
