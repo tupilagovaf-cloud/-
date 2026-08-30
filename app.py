@@ -4,11 +4,10 @@ import requests
 import os
 
 app = Flask(__name__)
-CORS(app)  # Разрешаем запросы с любых источников
+CORS(app)
 
-# Берем токен бота из переменных окружения Render
 BOT_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-CHAT_ID = "5493329438"  # Твой ID в Telegram
+CHAT_ID = "5493329438"
 
 @app.route('/')
 def home():
@@ -17,7 +16,6 @@ def home():
 @app.route('/send', methods=['POST', 'OPTIONS'])
 def send_order():
     if request.method == 'OPTIONS':
-        # Ответ на preflight-запрос
         response = jsonify({"status": "ok"})
         response.headers.add("Access-Control-Allow-Origin", "*")
         response.headers.add("Access-Control-Allow-Headers", "Content-Type")
@@ -26,6 +24,8 @@ def send_order():
 
     try:
         data = request.get_json()
+        print("Получены данные:", data)  # Лог на Render
+
         name = data.get('name', 'Не указано')
         phone = data.get('phone', 'Не указан')
         address = data.get('address', 'Не указан')
@@ -47,6 +47,7 @@ def send_order():
             return jsonify({"status": "error", "message": "Telegram API error"}), 500
 
     except Exception as e:
+        print("Ошибка:", str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
 if __name__ == '__main__':
